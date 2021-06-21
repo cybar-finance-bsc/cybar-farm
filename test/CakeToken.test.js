@@ -1,15 +1,15 @@
 const { assert } = require("chai");
 
-const CakeToken = artifacts.require('CakeToken');
+const CybarToken = artifacts.require('CybarToken');
 
-contract('CakeToken', ([alice, bob, carol, dev, minter]) => {
+contract('CybarToken', ([alice, bob, carol, dev, minter]) => {
     beforeEach(async () => {
-        this.cake = await CakeToken.new({ from: minter });
+        this.cybar = await CybarToken.new({ from: minter });
     });
 
 
     it('mint', async () => {
-        await this.cake.mint(alice, 1000, { from: minter });
-        assert.equal((await this.cake.balanceOf(alice)).toString(), '1000');
+        await this.cybar.mint(alice, 1000, { from: minter });
+        assert.equal((await this.cybar.balanceOf(alice)).toString(), '1000');
     })
 });
