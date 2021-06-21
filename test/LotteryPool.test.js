@@ -1,15 +1,15 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { assert } = require('chai');
-const CakeToken = artifacts.require('CakeToken');
-const SyrupBar = artifacts.require('SyrupBar');
+const CybarToken = artifacts.require('CybarToken');
+const DyceBar = artifacts.require('DyceBar');
 const MasterChef = artifacts.require('MasterChef');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const LotteryRewardPool = artifacts.require('LotteryRewardPool');
 
-contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
+contract('LotteryPool', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
-    this.cake = await CakeToken.new({ from: minter });
-    this.syrup = await SyrupBar.new(this.cake.address, { from: minter });
+    this.cybar = await CybarToken.new({ from: minter });
+    this.dyce = await DyceBar.new(this.cybar.address, { from: minter });
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
@@ -23,15 +23,17 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
       from: minter,
     });
     this.chef = await MasterChef.new(
-      this.cake.address,
-      this.syrup.address,
+      this.cybar.address,
+      this.dyce.address,
       dev,
       '10',
       '10',
       { from: minter }
     );
-    await this.cake.transferOwnership(this.chef.address, { from: minter });
-    await this.syrup.transferOwnership(this.chef.address, { from: minter });
+    let currentBlock = (await time.latestBlock()).toString();
+    console.log(`Block: ${currentBlock}`);
+    await this.cybar.transferOwnership(this.chef.address, { from: minter });
+    await this.dyce.transferOwnership(this.chef.address, { from: minter });
 
     await this.lp1.transfer(bob, '2000', { from: minter });
     await this.lp2.transfer(bob, '2000', { from: minter });
@@ -43,10 +45,10 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
   });
 
   it('real case', async () => {
-    await time.advanceBlockTo('70');
+    await time.advanceBlockTo('90');
     this.lottery = await LotteryRewardPool.new(
       this.chef.address,
-      this.cake.address,
+      this.cybar.address,
       dev,
       carol,
       { from: minter }
@@ -62,13 +64,22 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
       (await this.lp4.balanceOf(this.lottery.address)).toString(),
       '10'
     );
-
+    // 
     await this.lottery.startFarming(4, this.lp4.address, '1', { from: dev });
-    await time.advanceBlockTo('80');
+    
+    let pendingRewardLottery = (await this.lottery.pendingReward('4')).toString();
+    let currentBlock = (await time.latestBlock()).toString();
+    console.log(`Block: ${currentBlock} -- Pending Reward: ${pendingRewardLottery}`);
+    
+    await time.advanceBlock();
+    
+    pendingRewardLottery = (await this.lottery.pendingReward('4')).toString();
+    currentBlock = (await time.latestBlock()).toString();
+    console.log(`Block: ${currentBlock} -- Pending Reward: ${pendingRewardLottery}`);
 
     assert.equal((await this.lottery.pendingReward('4')).toString(), '3');
     assert.equal(
-      (await this.cake.balanceOf(this.lottery.address)).toString(),
+      (await this.cybar.balanceOf(this.lottery.address)).toString(),
       '0'
     );
 
@@ -76,16 +87,16 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
     // console.log(await this.lottery.pendingReward(4).toString())
 
     assert.equal(
-      (await this.cake.balanceOf(this.lottery.address)).toString(),
+      (await this.cybar.balanceOf(this.lottery.address)).toString(),
       '0'
     );
-    assert.equal((await this.cake.balanceOf(carol)).toString(), '5');
+    assert.equal((await this.cybar.balanceOf(carol)).toString(), '5');
   });
 
   it('setReceiver', async () => {
     this.lottery = await LotteryRewardPool.new(
       this.chef.address,
-      this.cake.address,
+      this.cybar.address,
       dev,
       carol,
       { from: minter }
@@ -96,11 +107,11 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
       from: dev,
     });
     await this.lottery.harvest(1, { from: dev });
-    assert.equal((await this.cake.balanceOf(carol)).toString(), '7');
+    assert.equal((await this.cybar.balanceOf(carol)).toString(), '7');
     await this.lottery.setReceiver(alice, { from: dev });
     assert.equal((await this.lottery.pendingReward('1')).toString(), '7');
     await this.lottery.harvest(1, { from: dev });
-    assert.equal((await this.cake.balanceOf(alice)).toString(), '15');
+    assert.equal((await this.cybar.balanceOf(alice)).toString(), '15');
   });
 
   it('emergencyWithdraw', async () => {});
@@ -108,7 +119,7 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
   it('update admin', async () => {
     this.lottery = await LotteryRewardPool.new(
       this.chef.address,
-      this.cake.address,
+      this.cybar.address,
       dev,
       carol,
       { from: minter }

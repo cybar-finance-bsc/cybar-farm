@@ -1,43 +1,43 @@
 const { advanceBlockTo } = require('@openzeppelin/test-helpers/src/time');
 const { assert } = require('chai');
-const CakeToken = artifacts.require('CakeToken');
-const SyrupBar = artifacts.require('SyrupBar');
+const CybarToken = artifacts.require('CybarToken');
+const DyceBar = artifacts.require('DyceBar');
 
-contract('SyrupBar', ([alice, bob, carol, dev, minter]) => {
+contract('DyceBar', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
-    this.cake = await CakeToken.new({ from: minter });
-    this.syrup = await SyrupBar.new(this.cake.address, { from: minter });
+    this.cybar = await CybarToken.new({ from: minter });
+    this.dyce = await DyceBar.new(this.cybar.address, { from: minter });
   });
 
   it('mint', async () => {
-    await this.syrup.mint(alice, 1000, { from: minter });
-    assert.equal((await this.syrup.balanceOf(alice)).toString(), '1000');
+    await this.dyce.mint(alice, 1000, { from: minter });
+    assert.equal((await this.dyce.balanceOf(alice)).toString(), '1000');
   });
 
   it('burn', async () => {
-    await advanceBlockTo('650');
-    await this.syrup.mint(alice, 1000, { from: minter });
-    await this.syrup.mint(bob, 1000, { from: minter });
-    assert.equal((await this.syrup.totalSupply()).toString(), '2000');
-    await this.syrup.burn(alice, 200, { from: minter });
+    await advanceBlockTo('60');
+    await this.dyce.mint(alice, 1000, { from: minter });
+    await this.dyce.mint(bob, 1000, { from: minter });
+    assert.equal((await this.dyce.totalSupply()).toString(), '2000');
+    await this.dyce.burn(alice, 200, { from: minter });
 
-    assert.equal((await this.syrup.balanceOf(alice)).toString(), '800');
-    assert.equal((await this.syrup.totalSupply()).toString(), '1800');
+    assert.equal((await this.dyce.balanceOf(alice)).toString(), '800');
+    assert.equal((await this.dyce.totalSupply()).toString(), '1800');
   });
 
-  it('safeCakeTransfer', async () => {
+  it('safeCybarTransfer', async () => {
     assert.equal(
-      (await this.cake.balanceOf(this.syrup.address)).toString(),
+      (await this.cybar.balanceOf(this.dyce.address)).toString(),
       '0'
     );
-    await this.cake.mint(this.syrup.address, 1000, { from: minter });
-    await this.syrup.safeCakeTransfer(bob, 200, { from: minter });
-    assert.equal((await this.cake.balanceOf(bob)).toString(), '200');
+    await this.cybar.mint(this.dyce.address, 1000, { from: minter });
+    await this.dyce.safeCybarTransfer(bob, 200, { from: minter });
+    assert.equal((await this.cybar.balanceOf(bob)).toString(), '200');
     assert.equal(
-      (await this.cake.balanceOf(this.syrup.address)).toString(),
+      (await this.cybar.balanceOf(this.dyce.address)).toString(),
       '800'
     );
-    await this.syrup.safeCakeTransfer(bob, 2000, { from: minter });
-    assert.equal((await this.cake.balanceOf(bob)).toString(), '1000');
+    await this.dyce.safeCybarTransfer(bob, 2000, { from: minter });
+    assert.equal((await this.cybar.balanceOf(bob)).toString(), '1000');
   });
 });
