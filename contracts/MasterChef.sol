@@ -11,14 +11,14 @@ import "./SyrupBar.sol";
 // import "@nomiclabs/buidler/console.sol";
 
 interface IMigratorChef {
-    // Perform LP token migration from legacy PancakeSwap to CybarSwap.
+    // Perform LP token migration from legacy CybarSwap to CybarSwap.
     // Take the current LP token address and return the new LP token address.
     // Migrator should have full access to the caller's LP token.
     // Return the new LP token address.
     //
-    // XXX Migrator must have allowance access to PancakeSwap LP tokens.
+    // XXX Migrator must have allowance access to CybarSwap LP tokens.
     // CybarSwap must mint EXACTLY the same amount of CybarSwap LP tokens or
-    // else something bad will happen. Traditional PancakeSwap does not
+    // else something bad will happen. Traditional CybarSwap does not
     // do that so be careful!
     function migrate(IBEP20 token) external returns (IBEP20);
 }
@@ -26,7 +26,7 @@ interface IMigratorChef {
 // MasterChef is the master of Cybar. He can make Cybar and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
-// will be transferred to a governance smart contract once CAKE is sufficiently
+// will be transferred to a governance smart contract once Cybar is sufficiently
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
@@ -39,7 +39,7 @@ contract MasterChef is Ownable {
         uint256 amount; // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         //
-        // We do some fancy math here. Basically, any point in time, the amount of CAKEs
+        // We do some fancy math here. Basically, any point in time, the amount of Cybars
         // entitled to a user but is pending to be distributed is:
         //
         //   pending reward = (user.amount * pool.accCybarPerShare) - user.rewardDebt
@@ -54,18 +54,18 @@ contract MasterChef is Ownable {
     // Info of each pool.
     struct PoolInfo {
         IBEP20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. CAKEs to distribute per block.
-        uint256 lastRewardBlock; // Last block number that CAKEs distribution occurs.
-        uint256 accCybarPerShare; // Accumulated CAKEs per share, times 1e12. See below.
+        uint256 allocPoint; // How many allocation points assigned to this pool. Cybars to distribute per block.
+        uint256 lastRewardBlock; // Last block number that Cybars distribution occurs.
+        uint256 accCybarPerShare; // Accumulated Cybars per share, times 1e12. See below.
     }
 
-    // The CAKE TOKEN!
+    // The Cybar TOKEN!
     CybarToken public cybar;
     // The SYRUP TOKEN!
     SyrupBar public syrup;
     // Dev address.
     address public devaddr;
-    // CAKE tokens created per block.
+    // Cybar tokens created per block.
     uint256 public cybarPerBlock;
     // Bonus muliplier for early cybar makers.
     uint256 public BONUS_MULTIPLIER = 1;
@@ -78,7 +78,7 @@ contract MasterChef is Ownable {
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
-    // The block number when CAKE mining starts.
+    // The block number when Cybar mining starts.
     uint256 public startBlock;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
@@ -147,7 +147,7 @@ contract MasterChef is Ownable {
         updateStakingPool();
     }
 
-    // Update the given pool's CAKE allocation point. Can only be called by the owner.
+    // Update the given pool's Cybar allocation point. Can only be called by the owner.
     function set(
         uint256 _pid,
         uint256 _allocPoint,
@@ -207,7 +207,7 @@ contract MasterChef is Ownable {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
 
-    // View function to see pending CAKEs on frontend.
+    // View function to see pending Cybars on frontend.
     function pendingCybar(uint256 _pid, address _user)
         external
         view
@@ -263,9 +263,9 @@ contract MasterChef is Ownable {
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterChef for CAKE allocation.
+    // Deposit LP tokens to MasterChef for Cybar allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        require(_pid != 0, "deposit CAKE by staking");
+        require(_pid != 0, "deposit Cybar by staking");
 
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -293,7 +293,7 @@ contract MasterChef is Ownable {
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
-        require(_pid != 0, "withdraw CAKE by unstaking");
+        require(_pid != 0, "withdraw Cybar by unstaking");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -314,7 +314,7 @@ contract MasterChef is Ownable {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    // Stake CAKE tokens to MasterChef
+    // Stake Cybar tokens to MasterChef
     function enterStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
@@ -342,7 +342,7 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, 0, _amount);
     }
 
-    // Withdraw CAKE tokens from STAKING.
+    // Withdraw Cybar tokens from STAKING.
     function leaveStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
@@ -375,7 +375,7 @@ contract MasterChef is Ownable {
         user.rewardDebt = 0;
     }
 
-    // Safe cybar transfer function, just in case if rounding error causes pool to not have enough CAKEs.
+    // Safe cybar transfer function, just in case if rounding error causes pool to not have enough Cybars.
     function safeCybarTransfer(address _to, uint256 _amount) internal {
         syrup.safeCybarTransfer(_to, _amount);
     }

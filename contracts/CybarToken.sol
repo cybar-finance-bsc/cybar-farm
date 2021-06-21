@@ -114,13 +114,13 @@ contract CybarToken is BEP20("CybarSwap Token", "Cybar") {
         address signatory = ecrecover(digest, v, r, s);
         require(
             signatory != address(0),
-            "CAKE::delegateBySig: invalid signature"
+            "Cybar::delegateBySig: invalid signature"
         );
         require(
             nonce == nonces[signatory]++,
-            "CAKE::delegateBySig: invalid nonce"
+            "Cybar::delegateBySig: invalid nonce"
         );
-        require(now <= expiry, "CAKE::delegateBySig: signature expired");
+        require(now <= expiry, "Cybar::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -149,7 +149,7 @@ contract CybarToken is BEP20("CybarSwap Token", "Cybar") {
     {
         require(
             blockNumber < block.number,
-            "CAKE::getPriorVotes: not yet determined"
+            "Cybar::getPriorVotes: not yet determined"
         );
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -185,7 +185,7 @@ contract CybarToken is BEP20("CybarSwap Token", "Cybar") {
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying CAKEs (not scaled);
+        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying Cybars (not scaled);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -232,7 +232,7 @@ contract CybarToken is BEP20("CybarSwap Token", "Cybar") {
         uint32 blockNumber =
             safe32(
                 block.number,
-                "CAKE::_writeCheckpoint: block number exceeds 32 bits"
+                "Cybar::_writeCheckpoint: block number exceeds 32 bits"
             );
 
         if (
