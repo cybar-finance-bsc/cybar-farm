@@ -1,20 +1,20 @@
 pragma solidity 0.6.12;
 
-import '@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
+import "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol";
+import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
+import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
-// SousChef is the chef of new tokens. He can make yummy food and he is a fair guy as well as MasterChef.
-contract SousChef {
+// AssistentBarkeeper is the barkeeper of new tokens. He can make yummy food and he is a fair guy as well as MasterBarkeeper.
+contract AssistentBarkeeper {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
     // Info of each user.
     struct UserInfo {
-        uint256 amount;   // How many SYRUP tokens the user has provided.
-        uint256 rewardDebt;  // Reward debt. See explanation below.
+        uint256 amount; // How many SYRUP tokens the user has provided.
+        uint256 rewardDebt; // Reward debt. See explanation below.
         uint256 rewardPending;
         //
         // We do some fancy math here. Basically, any point in time, the amount of SYRUPs
@@ -32,19 +32,19 @@ contract SousChef {
 
     // Info of Pool
     struct PoolInfo {
-        uint256 lastRewardBlock;  // Last block number that Rewards distribution occurs.
+        uint256 lastRewardBlock; // Last block number that Rewards distribution occurs.
         uint256 accRewardPerShare; // Accumulated reward per share, times 1e12. See below.
     }
 
     // The SYRUP TOKEN!
-    IBEP20 public syrup;
+    IBEP20 public shot;
     // rewards created per block.
     uint256 public rewardPerBlock;
 
     // Info.
     PoolInfo public poolInfo;
-    // Info of each user that stakes Syrup tokens.
-    mapping (address => UserInfo) public userInfo;
+    // Info of each user that stakes Shot tokens.
+    mapping(address => UserInfo) public userInfo;
 
     // addresses list
     address[] public addressList;
@@ -59,12 +59,12 @@ contract SousChef {
     event EmergencyWithdraw(address indexed user, uint256 amount);
 
     constructor(
-        IBEP20 _syrup,
+        IBEP20 _shot,
         uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _endBlock
     ) public {
-        syrup = _syrup;
+        shot = _shot;
         rewardPerBlock = _rewardPerBlock;
         startBlock = _startBlock;
         bonusEndBlock = _endBlock;
@@ -81,7 +81,11 @@ contract SousChef {
     }
 
     // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to) internal view returns (uint256) {
+    function getMultiplier(uint256 _from, uint256 _to)
+        internal
+        view
+        returns (uint256)
+    {
         if (_to <= bonusEndBlock) {
             return _to.sub(_from);
         } else if (_from >= bonusEndBlock) {
@@ -96,13 +100,22 @@ contract SousChef {
         PoolInfo storage pool = poolInfo;
         UserInfo storage user = userInfo[_user];
         uint256 accRewardPerShare = pool.accRewardPerShare;
-        uint256 stakedSupply = syrup.balanceOf(address(this));
+        uint256 stakedSupply = shot.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && stakedSupply != 0) {
-            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 multiplier =
+                getMultiplier(pool.lastRewardBlock, block.number);
             uint256 tokenReward = multiplier.mul(rewardPerBlock);
-            accRewardPerShare = accRewardPerShare.add(tokenReward.mul(1e12).div(stakedSupply));
+            accRewardPerShare = accRewardPerShare.add(
+                tokenReward.mul(1e12).div(stakedSupply)
+            );
         }
-        return user.amount.mul(accRewardPerShare).div(1e12).sub(user.rewardDebt).add(user.rewardPending);
+        return
+            user
+                .amount
+                .mul(accRewardPerShare)
+                .div(1e12)
+                .sub(user.rewardDebt)
+                .add(user.rewardPending);
     }
 
     // Update reward variables of the given pool to be up-to-date.
@@ -110,46 +123,60 @@ contract SousChef {
         if (block.number <= poolInfo.lastRewardBlock) {
             return;
         }
-        uint256 syrupSupply = syrup.balanceOf(address(this));
-        if (syrupSupply == 0) {
+        uint256 shotSupply = shot.balanceOf(address(this));
+        if (shotSupply == 0) {
             poolInfo.lastRewardBlock = block.number;
             return;
         }
-        uint256 multiplier = getMultiplier(poolInfo.lastRewardBlock, block.number);
+        uint256 multiplier =
+            getMultiplier(poolInfo.lastRewardBlock, block.number);
         uint256 tokenReward = multiplier.mul(rewardPerBlock);
 
-        poolInfo.accRewardPerShare = poolInfo.accRewardPerShare.add(tokenReward.mul(1e12).div(syrupSupply));
+        poolInfo.accRewardPerShare = poolInfo.accRewardPerShare.add(
+            tokenReward.mul(1e12).div(shotSupply)
+        );
         poolInfo.lastRewardBlock = block.number;
     }
 
-
-    // Deposit Syrup tokens to SousChef for Reward allocation.
+    // Deposit Shot tokens to AssistentBarkeeper for Reward allocation.
     function deposit(uint256 _amount) public {
-        require (_amount > 0, 'amount 0');
+        require(_amount > 0, "amount 0");
         UserInfo storage user = userInfo[msg.sender];
         updatePool();
-        syrup.safeTransferFrom(address(msg.sender), address(this), _amount);
+        shot.safeTransferFrom(address(msg.sender), address(this), _amount);
         // The deposit behavior before farming will result in duplicate addresses, and thus we will manually remove them when airdropping.
-        if (user.amount == 0 && user.rewardPending == 0 && user.rewardDebt == 0) {
+        if (
+            user.amount == 0 && user.rewardPending == 0 && user.rewardDebt == 0
+        ) {
             addressList.push(address(msg.sender));
         }
-        user.rewardPending = user.amount.mul(poolInfo.accRewardPerShare).div(1e12).sub(user.rewardDebt).add(user.rewardPending);
+        user.rewardPending = user
+            .amount
+            .mul(poolInfo.accRewardPerShare)
+            .div(1e12)
+            .sub(user.rewardDebt)
+            .add(user.rewardPending);
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(poolInfo.accRewardPerShare).div(1e12);
 
         emit Deposit(msg.sender, _amount);
     }
 
-    // Withdraw Syrup tokens from SousChef.
+    // Withdraw Shot tokens from AssistentBarkeeper.
     function withdraw(uint256 _amount) public {
-        require (_amount > 0, 'amount 0');
+        require(_amount > 0, "amount 0");
         UserInfo storage user = userInfo[msg.sender];
         require(user.amount >= _amount, "withdraw: not enough");
 
         updatePool();
-        syrup.safeTransfer(address(msg.sender), _amount);
+        shot.safeTransfer(address(msg.sender), _amount);
 
-        user.rewardPending = user.amount.mul(poolInfo.accRewardPerShare).div(1e12).sub(user.rewardDebt).add(user.rewardPending);
+        user.rewardPending = user
+            .amount
+            .mul(poolInfo.accRewardPerShare)
+            .div(1e12)
+            .sub(user.rewardDebt)
+            .add(user.rewardPending);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(poolInfo.accRewardPerShare).div(1e12);
 
@@ -159,11 +186,10 @@ contract SousChef {
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw() public {
         UserInfo storage user = userInfo[msg.sender];
-        syrup.safeTransfer(address(msg.sender), user.amount);
+        shot.safeTransfer(address(msg.sender), user.amount);
         emit EmergencyWithdraw(msg.sender, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
         user.rewardPending = 0;
     }
-
 }
