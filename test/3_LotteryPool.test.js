@@ -22,7 +22,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     this.lp4 = await MockBEP20.new('LPToken', 'LP4', '1000000', {
       from: minter,
     });
-    this.chef = await MasterBarkeeper.new(
+    this.barkeeper = await MasterBarkeeper.new(
       this.cybar.address,
       this.shot.address,
       dev,
@@ -30,8 +30,8 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
       '10',
       { from: minter }
     );
-    await this.cybar.transferOwnership(this.chef.address, { from: minter });
-    await this.shot.transferOwnership(this.chef.address, { from: minter });
+    await this.cybar.transferOwnership(this.barkeeper.address, { from: minter });
+    await this.shot.transferOwnership(this.barkeeper.address, { from: minter });
 
     await this.lp1.transfer(bob, '2000', { from: minter });
     await this.lp2.transfer(bob, '2000', { from: minter });
@@ -45,7 +45,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
   it('real case', async () => {
     await time.advanceBlockTo('70');
     this.lottery = await LotteryRewardPool.new(
-      this.chef.address,
+      this.barkeeper.address,
       this.cybar.address,
       dev,
       carol,
@@ -53,10 +53,10 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     );
     await this.lp4.transfer(this.lottery.address, '10', { from: minter });
 
-    await this.chef.add('1000', this.lp1.address, true, { from: minter });
-    await this.chef.add('1000', this.lp2.address, true, { from: minter });
-    await this.chef.add('500', this.lp3.address, true, { from: minter });
-    await this.chef.add('500', this.lp4.address, true, { from: minter });
+    await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
+    await this.barkeeper.add('1000', this.lp2.address, true, { from: minter });
+    await this.barkeeper.add('500', this.lp3.address, true, { from: minter });
+    await this.barkeeper.add('500', this.lp4.address, true, { from: minter });
 
     assert.equal(
       (await this.lp4.balanceOf(this.lottery.address)).toString(),
@@ -84,14 +84,14 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
 
   it('setReceiver', async () => {
     this.lottery = await LotteryRewardPool.new(
-      this.chef.address,
+      this.barkeeper.address,
       this.cybar.address,
       dev,
       carol,
       { from: minter }
     );
     await this.lp1.transfer(this.lottery.address, '10', { from: minter });
-    await this.chef.add('1000', this.lp1.address, true, { from: minter });
+    await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
     await this.lottery.startFarming(1, this.lp1.address, '1', {
       from: dev,
     });
@@ -107,7 +107,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
 
   it('update admin', async () => {
     this.lottery = await LotteryRewardPool.new(
-      this.chef.address,
+      this.barkeeper.address,
       this.cybar.address,
       dev,
       carol,
@@ -116,7 +116,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     assert.equal(await this.lottery.adminAddress(), dev);
     await this.lottery.setAdmin(alice, { from: minter });
     assert.equal(await this.lottery.adminAddress(), alice);
-    await this.chef.add('1000', this.lp1.address, true, { from: minter });
+    await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
     await expectRevert(
       this.lottery.startFarming(1, this.lp1.address, '1', { from: dev }),
       'admin: wut?'

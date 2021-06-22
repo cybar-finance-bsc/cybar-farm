@@ -6,7 +6,7 @@ import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
-// SousBarkeeper is the chef of new tokens. He can make yummy food and he is a fair guy as well as MasterBarkeeper.
+// SousBarkeeper is the barkeeper of new tokens. He can make yummy food and he is a fair guy as well as MasterBarkeeper.
 contract SousBarkeeper {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;

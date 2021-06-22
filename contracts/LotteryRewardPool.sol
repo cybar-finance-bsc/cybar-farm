@@ -9,19 +9,19 @@ import "./MasterBarkeeper.sol";
 contract LotteryRewardPool is Ownable {
     using SafeBEP20 for IBEP20;
 
-    MasterBarkeeper public chef;
+    MasterBarkeeper public barkeeper;
     address public adminAddress;
     address public receiver;
     IBEP20 public lptoken;
     IBEP20 public cybar;
 
     constructor(
-        MasterBarkeeper _chef,
+        MasterBarkeeper _barkeeper,
         IBEP20 _cybar,
         address _admin,
         address _receiver
     ) public {
-        chef = _chef;
+        barkeeper = _barkeeper;
         cybar = _cybar;
         adminAddress = _admin;
         receiver = _receiver;
@@ -41,13 +41,13 @@ contract LotteryRewardPool is Ownable {
         IBEP20 _lptoken,
         uint256 _amount
     ) external onlyAdmin {
-        _lptoken.safeApprove(address(chef), _amount);
-        chef.deposit(_pid, _amount);
+        _lptoken.safeApprove(address(barkeeper), _amount);
+        barkeeper.deposit(_pid, _amount);
         emit StartFarming(msg.sender, _pid);
     }
 
     function harvest(uint256 _pid) external onlyAdmin {
-        chef.deposit(_pid, 0);
+        barkeeper.deposit(_pid, 0);
         uint256 balance = cybar.balanceOf(address(this));
         cybar.safeTransfer(receiver, balance);
         emit Harvest(msg.sender, _pid);
@@ -58,7 +58,7 @@ contract LotteryRewardPool is Ownable {
     }
 
     function pendingReward(uint256 _pid) external view returns (uint256) {
-        return chef.pendingCybar(_pid, address(this));
+        return barkeeper.pendingCybar(_pid, address(this));
     }
 
     // EMERGENCY ONLY.
