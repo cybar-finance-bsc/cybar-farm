@@ -6,8 +6,8 @@ import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
-// SousChef is the chef of new tokens. He can make yummy food and he is a fair guy as well as MasterChef.
-contract SousChef {
+// SousBarkeeper is the chef of new tokens. He can make yummy food and he is a fair guy as well as MasterBarkeeper.
+contract SousBarkeeper {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
@@ -138,7 +138,7 @@ contract SousChef {
         poolInfo.lastRewardBlock = block.number;
     }
 
-    // Deposit Shot tokens to SousChef for Reward allocation.
+    // Deposit Shot tokens to SousBarkeeper for Reward allocation.
     function deposit(uint256 _amount) public {
         require(_amount > 0, "amount 0");
         UserInfo storage user = userInfo[msg.sender];
@@ -162,7 +162,7 @@ contract SousChef {
         emit Deposit(msg.sender, _amount);
     }
 
-    // Withdraw Shot tokens from SousChef.
+    // Withdraw Shot tokens from SousBarkeeper.
     function withdraw(uint256 _amount) public {
         require(_amount > 0, "amount 0");
         UserInfo storage user = userInfo[msg.sender];

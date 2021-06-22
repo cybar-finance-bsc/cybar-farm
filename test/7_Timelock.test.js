@@ -1,7 +1,7 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const ethers = require('ethers');
 const CybarToken = artifacts.require('CybarToken');
-const MasterChef = artifacts.require('MasterChef');
+const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const Timelock = artifacts.require('Timelock');
 const ShotBar = artifacts.require('ShotBar');
@@ -61,11 +61,11 @@ contract('Timelock', ([alice, bob, carol, dev, minter]) => {
         assert.equal((await this.cybar.owner()).valueOf(), carol);
     });
 
-    it('should also work with MasterChef', async () => {
+    it('should also work with MasterBarkeeper', async () => {
         this.lp1 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
         this.lp2 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
         this.shot = await ShotBar.new(this.cybar.address, { from: minter });
-        this.chef = await MasterChef.new(this.cybar.address, this.shot.address, dev, '1000', '0', { from: alice });
+        this.chef = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, '1000', '0', { from: alice });
         await this.cybar.transferOwnership(this.chef.address, { from: alice });
         await this.shot.transferOwnership(this.chef.address, { from: minter });
         await this.chef.add('100', this.lp1.address, true, { from: alice });

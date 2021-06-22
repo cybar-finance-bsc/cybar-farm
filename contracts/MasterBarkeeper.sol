@@ -10,7 +10,7 @@ import "./ShotBar.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
-interface IMigratorChef {
+interface IMigratorBarkeeper {
     // Perform LP token migration from legacy CybarSwap to CybarSwap.
     // Take the current LP token address and return the new LP token address.
     // Migrator should have full access to the caller's LP token.
@@ -23,14 +23,14 @@ interface IMigratorChef {
     function migrate(IBEP20 token) external returns (IBEP20);
 }
 
-// MasterChef is the master of Cybar. He can make Cybar and he is a fair guy.
+// MasterBarkeeper is the master of Cybar. He can make Cybar and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once Cybar is sufficiently
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MasterChef is Ownable {
+contract MasterBarkeeper is Ownable {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
@@ -70,7 +70,7 @@ contract MasterChef is Ownable {
     // Bonus muliplier for early cybar makers.
     uint256 public BONUS_MULTIPLIER = 1;
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorChef public migrator;
+    IMigratorBarkeeper public migrator;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -182,7 +182,7 @@ contract MasterChef is Ownable {
     }
 
     // Set the migrator contract. Can only be called by the owner.
-    function setMigrator(IMigratorChef _migrator) public onlyOwner {
+    function setMigrator(IMigratorBarkeeper _migrator) public onlyOwner {
         migrator = _migrator;
     }
 
@@ -263,7 +263,7 @@ contract MasterChef is Ownable {
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterChef for Cybar allocation.
+    // Deposit LP tokens to MasterBarkeeper for Cybar allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
         require(_pid != 0, "deposit Cybar by staking");
 
@@ -291,7 +291,7 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    // Withdraw LP tokens from MasterChef.
+    // Withdraw LP tokens from MasterBarkeeper.
     function withdraw(uint256 _pid, uint256 _amount) public {
         require(_pid != 0, "withdraw Cybar by unstaking");
         PoolInfo storage pool = poolInfo[_pid];
@@ -314,7 +314,7 @@ contract MasterChef is Ownable {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    // Stake Cybar tokens to MasterChef
+    // Stake Cybar tokens to MasterBarkeeper
     function enterStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];

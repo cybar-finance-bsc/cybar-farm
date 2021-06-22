@@ -6,7 +6,7 @@ import "./CybarToken.sol";
 
 // ShotBar with Governance.
 contract ShotBar is BEP20("ShotBar Token", "SYRUP") {
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterChef).
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterBarkeeper).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);

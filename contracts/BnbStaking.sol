@@ -184,7 +184,7 @@ contract BnbStaking is Ownable {
         }
     }
 
-    // Stake tokens to SmartChef
+    // Stake tokens to SmartBarkeeper
     function deposit() public payable {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[msg.sender];

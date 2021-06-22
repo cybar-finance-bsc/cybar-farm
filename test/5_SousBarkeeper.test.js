@@ -1,16 +1,16 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const CybarToken = artifacts.require('CybarToken');
-const MasterChef = artifacts.require('MasterChef');
+const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const ShotBar = artifacts.require('ShotBar');
-const SousChef = artifacts.require('SousChef');
+const SousBarkeeper = artifacts.require('SousBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-contract('SousChef', ([alice, bob, carol, dev, minter]) => {
+contract('SousBarkeeper', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
     this.shot = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
-    this.chef = await SousChef.new(this.shot.address, '40', '300', '400', {
+    this.chef = await SousBarkeeper.new(this.shot.address, '40', '300', '400', {
       from: minter,
     });
   });
@@ -167,7 +167,7 @@ contract('SousChef', ([alice, bob, carol, dev, minter]) => {
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
-    this.chef = await MasterChef.new(
+    this.chef = await MasterBarkeeper.new(
       this.cybar.address,
       this.shot.address,
       dev,
@@ -193,7 +193,7 @@ contract('SousChef', ([alice, bob, carol, dev, minter]) => {
     await time.advanceBlockTo('510');
     await this.chef.enterStaking('10', { from: alice });
 
-    this.chef2 = await SousChef.new(this.shot.address, '40', '600', '800', {
+    this.chef2 = await SousBarkeeper.new(this.shot.address, '40', '600', '800', {
       from: minter,
     });
     await this.shot.approve(this.chef2.address, '10', { from: alice });
