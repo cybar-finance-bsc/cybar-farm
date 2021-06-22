@@ -2,15 +2,15 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const CybarToken = artifacts.require('CybarToken');
 const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const ShotBar = artifacts.require('ShotBar');
-const SousBarkeeper = artifacts.require('SousBarkeeper');
+const AssistentBarkeeper = artifacts.require('AssistentBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-contract('SousBarkeeper', ([alice, bob, carol, dev, minter]) => {
+contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
     this.shot = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
-    this.barkeeper = await SousBarkeeper.new(this.shot.address, '40', '300', '400', {
+    this.barkeeper = await AssistentBarkeeper.new(this.shot.address, '40', '300', '400', {
       from: minter,
     });
   });
@@ -193,7 +193,7 @@ contract('SousBarkeeper', ([alice, bob, carol, dev, minter]) => {
     await time.advanceBlockTo('510');
     await this.barkeeper.enterStaking('10', { from: alice });
 
-    this.barkeeper2 = await SousBarkeeper.new(this.shot.address, '40', '600', '800', {
+    this.barkeeper2 = await AssistentBarkeeper.new(this.shot.address, '40', '600', '800', {
       from: minter,
     });
     await this.shot.approve(this.barkeeper2.address, '10', { from: alice });
