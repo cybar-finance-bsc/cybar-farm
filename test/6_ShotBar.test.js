@@ -1,12 +1,12 @@
 const { advanceBlockTo } = require('@openzeppelin/test-helpers/src/time');
 const { assert } = require('chai');
 const CybarToken = artifacts.require('CybarToken');
-const SyrupBar = artifacts.require('SyrupBar');
+const ShotBar = artifacts.require('ShotBar');
 
-contract('SyrupBar', ([alice, bob, carol, dev, minter]) => {
+contract('ShotBar', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
-    this.syrup = await SyrupBar.new(this.cybar.address, { from: minter });
+    this.syrup = await ShotBar.new(this.cybar.address, { from: minter });
   });
 
   it('mint', async () => {

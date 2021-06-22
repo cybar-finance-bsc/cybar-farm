@@ -6,7 +6,7 @@ import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
 import "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
 
 import "./CybarToken.sol";
-import "./SyrupBar.sol";
+import "./ShotBar.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
@@ -62,7 +62,7 @@ contract MasterChef is Ownable {
     // The Cybar TOKEN!
     CybarToken public cybar;
     // The SYRUP TOKEN!
-    SyrupBar public syrup;
+    ShotBar public syrup;
     // Dev address.
     address public devaddr;
     // Cybar tokens created per block.
@@ -91,7 +91,7 @@ contract MasterChef is Ownable {
 
     constructor(
         CybarToken _cybar,
-        SyrupBar _syrup,
+        ShotBar _syrup,
         address _devaddr,
         uint256 _cybarPerBlock,
         uint256 _startBlock

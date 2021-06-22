@@ -4,7 +4,7 @@ const CybarToken = artifacts.require('CybarToken');
 const MasterChef = artifacts.require('MasterChef');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const Timelock = artifacts.require('Timelock');
-const SyrupBar = artifacts.require('SyrupBar');
+const ShotBar = artifacts.require('ShotBar');
 
 function encodeParameters(types, values) {
     const abi = new ethers.utils.AbiCoder();
@@ -64,7 +64,7 @@ contract('Timelock', ([alice, bob, carol, dev, minter]) => {
     it('should also work with MasterChef', async () => {
         this.lp1 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
         this.lp2 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
-        this.syrup = await SyrupBar.new(this.cybar.address, { from: minter });
+        this.syrup = await ShotBar.new(this.cybar.address, { from: minter });
         this.chef = await MasterChef.new(this.cybar.address, this.syrup.address, dev, '1000', '0', { from: alice });
         await this.cybar.transferOwnership(this.chef.address, { from: alice });
         await this.syrup.transferOwnership(this.chef.address, { from: minter });

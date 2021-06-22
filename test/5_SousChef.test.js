@@ -1,7 +1,7 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const CybarToken = artifacts.require('CybarToken');
 const MasterChef = artifacts.require('MasterChef');
-const SyrupBar = artifacts.require('SyrupBar');
+const ShotBar = artifacts.require('ShotBar');
 const SousChef = artifacts.require('SousChef');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
@@ -163,7 +163,7 @@ contract('SousChef', ([alice, bob, carol, dev, minter]) => {
 
   it('try syrup', async () => {
     this.cybar = await CybarToken.new({ from: minter });
-    this.syrup = await SyrupBar.new(this.cybar.address, { from: minter });
+    this.syrup = await ShotBar.new(this.cybar.address, { from: minter });
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
