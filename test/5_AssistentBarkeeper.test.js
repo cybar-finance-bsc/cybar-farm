@@ -15,7 +15,7 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter]) => {
     });
   });
 
-  it('sous barkeeper now', async () => {
+  it('assistent barkeeper now', async () => {
     await this.shot.transfer(bob, '1000', { from: minter });
     await this.shot.transfer(carol, '1000', { from: minter });
     await this.shot.transfer(alice, '1000', { from: minter });
