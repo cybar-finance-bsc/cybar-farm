@@ -62,7 +62,7 @@ contract MasterChef is Ownable {
     // The Cybar TOKEN!
     CybarToken public cybar;
     // The SYRUP TOKEN!
-    ShotBar public syrup;
+    ShotBar public shot;
     // Dev address.
     address public devaddr;
     // Cybar tokens created per block.
@@ -91,13 +91,13 @@ contract MasterChef is Ownable {
 
     constructor(
         CybarToken _cybar,
-        ShotBar _syrup,
+        ShotBar _shot,
         address _devaddr,
         uint256 _cybarPerBlock,
         uint256 _startBlock
     ) public {
         cybar = _cybar;
-        syrup = _syrup;
+        shot = _shot;
         devaddr = _devaddr;
         cybarPerBlock = _cybarPerBlock;
         startBlock = _startBlock;
@@ -256,7 +256,7 @@ contract MasterChef is Ownable {
                 totalAllocPoint
             );
         cybar.mint(devaddr, cybarReward.div(10));
-        cybar.mint(address(syrup), cybarReward);
+        cybar.mint(address(shot), cybarReward);
         pool.accCybarPerShare = pool.accCybarPerShare.add(
             cybarReward.mul(1e12).div(lpSupply)
         );
@@ -338,7 +338,7 @@ contract MasterChef is Ownable {
         }
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
 
-        syrup.mint(msg.sender, _amount);
+        shot.mint(msg.sender, _amount);
         emit Deposit(msg.sender, 0, _amount);
     }
 
@@ -361,7 +361,7 @@ contract MasterChef is Ownable {
         }
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
 
-        syrup.burn(msg.sender, _amount);
+        shot.burn(msg.sender, _amount);
         emit Withdraw(msg.sender, 0, _amount);
     }
 
@@ -377,7 +377,7 @@ contract MasterChef is Ownable {
 
     // Safe cybar transfer function, just in case if rounding error causes pool to not have enough Cybars.
     function safeCybarTransfer(address _to, uint256 _amount) internal {
-        syrup.safeCybarTransfer(_to, _amount);
+        shot.safeCybarTransfer(_to, _amount);
     }
 
     // Update dev address by the previous dev.

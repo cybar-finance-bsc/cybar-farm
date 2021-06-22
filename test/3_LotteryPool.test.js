@@ -9,7 +9,7 @@ const LotteryRewardPool = artifacts.require('LotteryRewardPool');
 contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
-    this.syrup = await ShotBar.new(this.cybar.address, { from: minter });
+    this.shot = await ShotBar.new(this.cybar.address, { from: minter });
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
     });
@@ -24,14 +24,14 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
     });
     this.chef = await MasterChef.new(
       this.cybar.address,
-      this.syrup.address,
+      this.shot.address,
       dev,
       '10',
       '10',
       { from: minter }
     );
     await this.cybar.transferOwnership(this.chef.address, { from: minter });
-    await this.syrup.transferOwnership(this.chef.address, { from: minter });
+    await this.shot.transferOwnership(this.chef.address, { from: minter });
 
     await this.lp1.transfer(bob, '2000', { from: minter });
     await this.lp2.transfer(bob, '2000', { from: minter });
