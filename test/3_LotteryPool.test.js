@@ -6,7 +6,7 @@ const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const LotteryRewardPool = artifacts.require('LotteryRewardPool');
 
-contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
+contract('MasterBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
     this.shot = await ShotBar.new(this.cybar.address, { from: minter });
@@ -26,6 +26,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
       this.cybar.address,
       this.shot.address,
       dev,
+      treasury,
       '10',
       '10',
       { from: minter }

@@ -4,14 +4,14 @@ const ShotBar = artifacts.require('ShotBar');
 const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
+contract('MasterBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
     this.shot = await ShotBar.new(this.cybar.address, { from: minter });
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', { from: minter });
     this.lp2 = await MockBEP20.new('LPToken', 'LP2', '1000000', { from: minter });
     this.lp3 = await MockBEP20.new('LPToken', 'LP3', '1000000', { from: minter });
-    this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, '1000', '100', { from: minter });
+      this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, treasury, '1000', '100', { from: minter });
     await this.cybar.transferOwnership(this.barkeeper.address, { from: minter });
     await this.shot.transferOwnership(this.barkeeper.address, { from: minter });
 

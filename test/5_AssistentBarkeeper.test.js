@@ -5,7 +5,7 @@ const ShotBar = artifacts.require('ShotBar');
 const AssistentBarkeeper = artifacts.require('AssistentBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter]) => {
+contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
   beforeEach(async () => {
     this.shot = await MockBEP20.new('LPToken', 'LP1', '1000000', {
       from: minter,
@@ -171,6 +171,7 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter]) => {
       this.cybar.address,
       this.shot.address,
       dev,
+      treasury,
       '1000',
       '300',
       { from: minter }
