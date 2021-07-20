@@ -107,7 +107,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
   });
 
 
-  it('updaate multiplier', async () => {
+  it('update multiplier', async () => {
     await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
     await this.barkeeper.add('1000', this.lp2.address, true, { from: minter });
     await this.barkeeper.add('1000', this.lp3.address, true, { from: minter });
@@ -150,6 +150,29 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     await this.barkeeper.withdraw(1, '100', { from: bob });
 
   });
+
+    it('withdrawal fees', async () => {
+        await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
+        await this.barkeeper.add('1000', this.lp2.address, true, { from: minter });
+        await this.barkeeper.setWithdrawal(1, 100, 72*60*60, { from: minter });
+        await this.barkeeper.setWithdrawal(2, 100, 60, { from: minter });
+
+        await this.lp1.approve(this.barkeeper.address, '100', { from: alice });
+        await this.barkeeper.deposit(1, '100', { from: alice });
+        await this.barkeeper.withdraw(1, '100', { from: alice });
+        assert.equal((await this.lp1.balanceOf(alice)).toString(), '1999');
+        assert.equal((await this.lp1.balanceOf(treasury)).toString(), '1');
+
+        await this.lp2.approve(this.barkeeper.address, '100', { from: bob });
+        await this.barkeeper.deposit(2, '100', { from: bob });
+        await time.increase(60);
+        await this.barkeeper.withdraw(2, '100', { from: bob });
+        assert.equal((await this.lp2.balanceOf(bob)).toString(), '2000');
+        assert.equal((await this.lp2.balanceOf(treasury)).toString(), '0');
+        
+        await expectRevert(this.barkeeper.setWithdrawal(1, 201, 72*60*60, { from: minter}), 'Withdrawal fee is too large');
+        await expectRevert(this.barkeeper.setWithdrawal(1, 200, 72*60*60+1, {from: minter}), 'Withdrawal fee time period is too large');
+    });
 
   it('should allow dev and only dev to update dev', async () => {
     assert.equal((await this.barkeeper.devaddr()).valueOf(), dev);
