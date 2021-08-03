@@ -5,7 +5,7 @@ const ShotBar = artifacts.require('ShotBar');
 const AssistentBarkeeper = artifacts.require('AssistentBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-let initialBlock;
+var initialBlock;
 
 contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     before(async() => {
@@ -35,7 +35,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
       (await this.shot.balanceOf(this.barkeeper.address)).toString(),
       '10'
     );
-    await time.advanceBlock();
+    var nextBlock = initialBlock + 10;
+    await time.advanceBlockTo(nextBlock);
 
     await this.barkeeper.deposit('30', { from: alice });
     assert.equal(
@@ -47,7 +48,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
       '40'
     );
 
-    await time.advanceBlock();
+    nextBlock += 2;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '50'
@@ -62,7 +64,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
       (await this.shot.balanceOf(this.barkeeper.address)).toString(),
       '80'
     );
-    await time.advanceBlock();
+    nextBlock += 2;
+    await time.advanceBlockTo(nextBlock);
     //  bob 10, alice 30, carol 40
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
@@ -89,7 +92,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
       '110'
     );
 
-    await time.advanceBlock();
+    nextBlock += 3;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '86'
@@ -102,7 +106,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     await this.barkeeper.withdraw('20', { from: alice }); // 308 bob 40, alice 30, carol 40
     await this.barkeeper.withdraw('30', { from: bob }); // 309  bob 10, alice 30, carol 40
 
-    await time.advanceBlock();
+    nextBlock += 3;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '118'
@@ -118,7 +123,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
 
       
     let currentBlock = parseInt((await time.latestBlock()).toString());
-    await time.advanceBlockTo(currentBlock+90);
+    nextBlock += 90;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '568'
@@ -133,7 +139,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     );
 
     currentBlock = parseInt((await time.latestBlock()).toString());
-    await time.advanceBlockTo(currentBlock+10);
+    nextBlock += 20;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '568'
@@ -153,7 +160,8 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     await this.barkeeper.deposit('30', { from: carol });
       
     currentBlock = parseInt((await time.latestBlock()).toString());
-    await time.advanceBlockTo(currentBlock+26);
+    nextBlock += 30;
+    await time.advanceBlockTo(nextBlock);
     assert.equal(
       (await this.barkeeper.pendingReward(bob, { from: bob })).toString(),
       '568'
@@ -168,6 +176,7 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
     );
     await this.barkeeper.withdraw('70', { from: carol });
     assert.equal((await this.barkeeper.addressLength()).toString(), '3');
+    endBlock = nextBlock;
   });
 
   it('try shot', async () => {
@@ -195,17 +204,20 @@ contract('AssistentBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
 
     await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
     await this.barkeeper.deposit(1, '20', { from: alice });
-    currentBlock = parseInt((await time.latestBlock()).toString());
-    await time.advanceBlockTo(currentBlock+45);
+    let nextBlock = initialBlock + 210;
+    await time.advanceBlockTo(nextBlock);
     await this.barkeeper.deposit(1, '0', { from: alice });
     await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
 
     await this.barkeeper.enterStaking('10', { from: alice });
     currentBlock = parseInt((await time.latestBlock()).toString());
-    await time.advanceBlockTo(currentBlock+7);
+    nextBlock += 10;
+    await time.advanceBlockTo(nextBlock);
     await this.barkeeper.enterStaking('10', { from: alice });
 
-    this.barkeeper2 = await AssistentBarkeeper.new(this.shot.address, '40', currentBlock+97, currentBlock+297, {
+    let startBlock = nextBlock + 90;
+    let endBlock = nextBlock + 290;
+    this.barkeeper2 = await AssistentBarkeeper.new(this.shot.address, '40', startBlock, endBlock, {
       from: minter,
     });
     await this.shot.approve(this.barkeeper2.address, '10', { from: alice });

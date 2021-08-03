@@ -1,4 +1,3 @@
-const { advanceBlockTo } = require('@openzeppelin/test-helpers/src/time');
 const { assert } = require('chai');
 const CybarToken = artifacts.require('CybarToken');
 const ShotBar = artifacts.require('ShotBar');
@@ -15,7 +14,6 @@ contract('ShotBar', ([alice, bob, carol, dev, minter]) => {
   });
 
   it('burn', async () => {
-    await advanceBlockTo('650');
     await this.shot.mint(alice, 1000, { from: minter });
     await this.shot.mint(bob, 1000, { from: minter });
     assert.equal((await this.shot.totalSupply()).toString(), '2000');

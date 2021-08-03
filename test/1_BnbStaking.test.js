@@ -5,7 +5,12 @@ const BnbStaking = artifacts.require('BnbStaking');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const WBNB = artifacts.require('libs/WBNB');
 
+var initialBlock;
+
 contract('BnbStaking.......', async ([alice, bob, admin, dev, minter]) => {
+  before(async() => {
+      initialBlock = parseInt((await time.latestBlock()).toString());
+  });
   beforeEach(async () => {
     this.rewardToken = await CybarToken.new({ from: minter });
     this.lpToken = await MockBEP20.new('LPToken', 'LP1', '1000000', {
@@ -26,7 +31,8 @@ contract('BnbStaking.......', async ([alice, bob, admin, dev, minter]) => {
   });
 
   it('deposit/withdraw', async () => {
-    await time.advanceBlockTo('10');
+    let nextBlock = initialBlock + 10;
+    await time.advanceBlockTo(nextBlock);
     await this.bnbBarkeeper.deposit({ from: alice, value: 100 });
     await this.bnbBarkeeper.deposit({ from: bob, value: 200 });
     assert.equal(
