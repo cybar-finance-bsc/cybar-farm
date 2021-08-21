@@ -31,18 +31,18 @@ contract MasterBarkeeper is Ownable {
     using SafeBEP20 for IBEP20;
 
     struct UserInfo {
-        uint256 amount; // How many LP tokens the user has provided
-        uint256 rewardDebt; // How many Cybar has the user already received
-        uint256 lastDepositTime; // Time of the last user deposit
+        uint256 amount;
+        uint256 rewardDebt;
+        uint256 lastDepositTime;
     }
 
     struct PoolInfo {
-        IBEP20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. Cybars to distribute per block.
-        uint256 lastRewardBlock; // Last block number that Cybars distribution occurs.
-        uint256 accCybarPerShare; // Accumulated Cybars per share, times 1e12. See below.
-        uint256 withdrawFeePeriod; // Timeframe in which a withdrawal fee will be applied.
-        uint256 withdrawFee; // Withdrawal fee if the user withdraws the investment before the time lock has finished 
+        IBEP20 lpToken;
+        uint256 allocPoint;
+        uint256 lastRewardBlock;
+        uint256 accCybarPerShare;
+        uint256 withdrawFeePeriod;
+        uint256 withdrawFee;
     }
 
     CybarToken public cybar;
