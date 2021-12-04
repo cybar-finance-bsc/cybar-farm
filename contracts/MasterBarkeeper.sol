@@ -8,8 +8,6 @@ import "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
 import "./CybarToken.sol";
 import "./ShotBar.sol";
 
-// import "@nomiclabs/buidler/console.sol";
-
 interface IMigratorBarkeeper {
     // Perform LP token migration from legacy CybarSwap to CybarSwap.
     // Take the current LP token address and return the new LP token address.
@@ -23,63 +21,48 @@ interface IMigratorBarkeeper {
     function migrate(IBEP20 token) external returns (IBEP20);
 }
 
-// MasterBarkeeper is the master of Cybar. He can make Cybar and he is a fair guy.
-//
-// Note that it's ownable and the owner wields tremendous power. The ownership
-// will be transferred to a governance smart contract once Cybar is sufficiently
-// distributed and the community can show to govern itself.
-//
-// Have fun reading it. Hopefully it's bug-free. God bless.
+/*
+ * @notice MasterBarkeeper controls the Cybar token distributed to the different pools.
+ * It can mint new Cybar.
+ * @dev The pool with pool Id = 0 is the Cybar staking pool
+ */
 contract MasterBarkeeper is Ownable {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
-    // Info of each user.
     struct UserInfo {
-        uint256 amount; // How many LP tokens the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
-        //
-        // We do some fancy math here. Basically, any point in time, the amount of Cybars
-        // entitled to a user but is pending to be distributed is:
-        //
-        //   pending reward = (user.amount * pool.accCybarPerShare) - user.rewardDebt
-        //
-        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `accCybarPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `amount` gets updated.
-        //   4. User's `rewardDebt` gets updated.
+        uint256 amount;
+        uint256 rewardDebt;
+        uint256 lastDepositTime;
     }
 
-    // Info of each pool.
     struct PoolInfo {
-        IBEP20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. Cybars to distribute per block.
-        uint256 lastRewardBlock; // Last block number that Cybars distribution occurs.
-        uint256 accCybarPerShare; // Accumulated Cybars per share, times 1e12. See below.
+        IBEP20 lpToken;
+        uint256 allocPoint;
+        uint256 lastRewardBlock;
+        uint256 accCybarPerShare;
+        uint256 withdrawFeePeriod;
+        uint256 withdrawFee;
     }
 
-    // The Cybar TOKEN!
     CybarToken public cybar;
-    // The SYRUP TOKEN!
     ShotBar public shot;
-    // Dev address.
     address public devaddr;
-    // Cybar tokens created per block.
+    address public treasury;
     uint256 public cybarPerBlock;
-    // Bonus muliplier for early cybar makers.
     uint256 public BONUS_MULTIPLIER = 1;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorBarkeeper public migrator;
 
-    // Info of each pool.
     PoolInfo[] public poolInfo;
-    // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
-    // The block number when Cybar mining starts.
     uint256 public startBlock;
+
+    /*
+     * Maximal withdrawal fee parameters. MAX_WITHDRAW_FEE is given in 10**-4
+     */
+    uint256 public constant MAX_WITHDRAW_FEE = 200;
+    uint256 public constant MAX_WITHDRAW_FEE_PERIOD = 72 hours;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -93,38 +76,52 @@ contract MasterBarkeeper is Ownable {
         CybarToken _cybar,
         ShotBar _shot,
         address _devaddr,
+        address _treasury,
         uint256 _cybarPerBlock,
         uint256 _startBlock
     ) public {
         cybar = _cybar;
         shot = _shot;
         devaddr = _devaddr;
+        treasury = _treasury;
         cybarPerBlock = _cybarPerBlock;
         startBlock = _startBlock;
 
-        // staking pool
         poolInfo.push(
             PoolInfo({
                 lpToken: _cybar,
                 allocPoint: 1000,
                 lastRewardBlock: startBlock,
-                accCybarPerShare: 0
+                accCybarPerShare: 0,
+                withdrawFeePeriod: 0,
+                withdrawFee: 0
             })
         );
 
         totalAllocPoint = 1000;
     }
 
+    /*
+     * @notice Updates multiplier
+     * @param multiplierNumber: New multiplier number
+     */
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
         BONUS_MULTIPLIER = multiplierNumber;
     }
 
+    /*
+     * @notice returns the number of pools
+     */
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
 
-    // Add a new lp to the pool. Can only be called by the owner.
-    // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    /*
+     * @notice Adds new LP to the pool. Can only be called by the owner. Do not add the same LP more than once.
+     * @param _allocPoint: Allocation points for that LP pool
+     * @param _lpToken: LP Token to be added
+     * @param _withUpdate: Whether to update all pools
+     */
     function add(
         uint256 _allocPoint,
         IBEP20 _lpToken,
@@ -141,23 +138,38 @@ contract MasterBarkeeper is Ownable {
                 lpToken: _lpToken,
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
-                accCybarPerShare: 0
-            })
+                accCybarPerShare: 0,
+                withdrawFeePeriod: 0,
+                withdrawFee: 0
+                })
         );
         updateStakingPool();
     }
 
-    // Update the given pool's Cybar allocation point. Can only be called by the owner.
+    /*
+     * @notice Sets pool specific parameter
+     * @param _pid: Pool Id of the pool to be updated
+     * @param _allocPoint: Allocation points
+     * @param _withdrawFee: Withdrawal fee for an early withdrawal
+     * @param _withdrawFeePeriod: Time frame in which a withdrawal fee is applied
+     * @param _withUpdate: Whether to update all pools
+     */
     function set(
         uint256 _pid,
         uint256 _allocPoint,
+        uint256 _withdrawFee,
+        uint256 _withdrawFeePeriod,
         bool _withUpdate
     ) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
+        require(_withdrawFee <= MAX_WITHDRAW_FEE, "Withdrawal fee is too large");
+        require(_withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD, "Withdrawal fee time period is too large");
         uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
         poolInfo[_pid].allocPoint = _allocPoint;
+        poolInfo[_pid].withdrawFeePeriod = _withdrawFeePeriod;
+        poolInfo[_pid].withdrawFee = _withdrawFee;
         if (prevAllocPoint != _allocPoint) {
             totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(
                 _allocPoint
@@ -166,6 +178,48 @@ contract MasterBarkeeper is Ownable {
         }
     }
 
+    /*
+     * @notice Sets allocations points
+     * @param _pid: Pool Id
+     * @param _allocPoint: New allocation points for that pool
+     * @param _withUpdate: Whether to update all pools before setting of allocation points
+     */
+    function setAllocPoint(
+        uint256 _pid,
+        uint256 _allocPoint,
+        bool _withUpdate
+    ) public onlyOwner {
+        if (_withUpdate){
+            massUpdatePools();
+        } 
+        uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
+        poolInfo[_pid].allocPoint = _allocPoint;
+        if (prevAllocPoint != _allocPoint) {
+            totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(_allocPoint);
+            updateStakingPool();
+        }
+    }
+
+    /*
+     * @notice Set time related withdrawal fees
+     * @param _pid: Pool Id
+     * @param _withdrawFee: Withdrawal fee for premature withdrawal
+     * @param _withdrawFeePeriod: Withdrawal fee period
+     */
+    function setWithdrawal(
+        uint256 _pid,
+        uint256 _withdrawFee,
+        uint256 _withdrawFeePeriod
+    ) public onlyOwner {
+        require(_withdrawFee <= MAX_WITHDRAW_FEE, "Withdrawal fee is too large");
+        require(_withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD, "Withdrawal fee time period is too large");
+        poolInfo[_pid].withdrawFee = _withdrawFee;
+        poolInfo[_pid].withdrawFeePeriod = _withdrawFeePeriod;
+    }
+
+    /*
+     * @notice Updates the allocation points of the staking pool by setting it to a third of all allocation pools in the farms.
+     */
     function updateStakingPool() internal {
         uint256 length = poolInfo.length;
         uint256 points = 0;
@@ -181,12 +235,20 @@ contract MasterBarkeeper is Ownable {
         }
     }
 
-    // Set the migrator contract. Can only be called by the owner.
+    /*
+     * @notice Sets a new migrator
+     * @dev Can only be called by the owner
+     * @param _migrator: New migrator
+     */
     function setMigrator(IMigratorBarkeeper _migrator) public onlyOwner {
         migrator = _migrator;
     }
 
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
+    /*
+     * @notice Migrates LP token to another LP contract.
+     * @dev Can be called by anyone. Is this intended?
+     * @param _pid: Pool Id of the pool to be migrated
+     */
     function migrate(uint256 _pid) public {
         require(address(migrator) != address(0), "migrate: no migrator");
         PoolInfo storage pool = poolInfo[_pid];
@@ -198,7 +260,11 @@ contract MasterBarkeeper is Ownable {
         pool.lpToken = newLpToken;
     }
 
-    // Return reward multiplier over the given _from to _to block.
+    /*
+     * @notice Returns the multiplier between the _from and _to block
+     * @param _from: Reference start block
+     * @param _to: Reference end block
+     */
     function getMultiplier(uint256 _from, uint256 _to)
         public
         view
@@ -207,7 +273,11 @@ contract MasterBarkeeper is Ownable {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
 
-    // View function to see pending Cybars on frontend.
+    /*
+     * @notice Returns the pending Cybar of a user for a pool
+     * @param _pid: Pool Id of the pool
+     * @param _user: User address
+     */
     function pendingCybar(uint256 _pid, address _user)
         external
         view
@@ -231,7 +301,9 @@ contract MasterBarkeeper is Ownable {
         return user.amount.mul(accCybarPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    // Update reward variables for all pools. Be careful of gas spending!
+    /*
+     * @notice Loops through all pools and updates each
+     */
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -239,7 +311,10 @@ contract MasterBarkeeper is Ownable {
         }
     }
 
-    // Update reward variables of the given pool to be up-to-date.
+    /*
+     * @notice Updates reward variables of a pool given its pool Id
+     * @param _pid: Pool Id of the pool to be updated
+     */
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         if (block.number <= pool.lastRewardBlock) {
@@ -263,7 +338,11 @@ contract MasterBarkeeper is Ownable {
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterBarkeeper for Cybar allocation.
+    /*
+     * @notice Deposit LP tokens to MasterBarkeeper for Cybar allocation
+     * @param _pid: Pool Id
+     * @param _amount: Amount of LP token
+     */
     function deposit(uint256 _pid, uint256 _amount) public {
         require(_pid != 0, "deposit Cybar by staking");
 
@@ -288,15 +367,21 @@ contract MasterBarkeeper is Ownable {
             user.amount = user.amount.add(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
+        user.lastDepositTime = block.timestamp;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    // Withdraw LP tokens from MasterBarkeeper.
+    /*
+     * @notice Withdraw from LP pool
+     * @param _pid: Pool Id
+     * @param _amount: Amount of LP tokens to withdraw
+     */
     function withdraw(uint256 _pid, uint256 _amount) public {
-        require(_pid != 0, "withdraw Cybar by unstaking");
+        require(_pid != 0, "Withdraw Cybar by unstaking");
+        require(_amount > 0, "Nothing to withdraw");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: not good");
+        require(user.amount >= _amount, "Withdraw: not good");
 
         updatePool(_pid);
         uint256 pending =
@@ -306,15 +391,22 @@ contract MasterBarkeeper is Ownable {
         if (pending > 0) {
             safeCybarTransfer(msg.sender, pending);
         }
-        if (_amount > 0) {
-            user.amount = user.amount.sub(_amount);
-            pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        uint256 currentAmount = _amount;
+        user.amount = user.amount.sub(_amount);
+        if(block.timestamp < user.lastDepositTime + pool.withdrawFeePeriod){
+            uint256 withdrawFee = currentAmount.mul(pool.withdrawFee).div(10000);
+            pool.lpToken.safeTransfer(treasury, withdrawFee);
+            currentAmount = currentAmount.sub(withdrawFee);
         }
+        pool.lpToken.safeTransfer(address(msg.sender), currentAmount);
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    // Stake Cybar tokens to MasterBarkeeper
+    /*
+     * @notice Stake Cybar tokens to MasterBarkeeper
+     * @param _amount: Amount of Cybar to be staked
+     */
     function enterStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
@@ -342,11 +434,14 @@ contract MasterBarkeeper is Ownable {
         emit Deposit(msg.sender, 0, _amount);
     }
 
-    // Withdraw Cybar tokens from STAKING.
+    /*
+     * @notice Withdraw Cybar token from staking
+     * @param _amount: Amount to be withdrawn from staking
+     */
     function leaveStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
-        require(user.amount >= _amount, "withdraw: not good");
+        require(user.amount >= _amount, "Withdraw: not good");
         updatePool(0);
         uint256 pending =
             user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
@@ -365,7 +460,10 @@ contract MasterBarkeeper is Ownable {
         emit Withdraw(msg.sender, 0, _amount);
     }
 
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    /*
+     * @notice Withdraw from pool in case of an emergency. All rewards will be forfeited.
+     * @param _pid: Pool Id
+     */
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -375,12 +473,20 @@ contract MasterBarkeeper is Ownable {
         user.rewardDebt = 0;
     }
 
-    // Safe cybar transfer function, just in case if rounding error causes pool to not have enough Cybars.
+    /*
+     * @notice Safe Cybar transfer function.
+     * @param _to: Address the Cybar is sent to
+     * @param _amount: Amount to be transfered
+     */
     function safeCybarTransfer(address _to, uint256 _amount) internal {
         shot.safeCybarTransfer(_to, _amount);
     }
 
-    // Update dev address by the previous dev.
+    /*
+     * @notice Update developer address
+     * @dev Can only be called by the current developer
+     * @param _devaddr: New developer address
+     */
     function dev(address _devaddr) public {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;

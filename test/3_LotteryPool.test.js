@@ -6,7 +6,12 @@ const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 const LotteryRewardPool = artifacts.require('LotteryRewardPool');
 
-contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
+var initialBlock;
+
+contract('LotteryPool',([alice, bob, carol, dev, minter, treasury]) => {
+  before(async() => {
+    initialBlock = parseInt((await time.latestBlock()).toString());
+  });
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
     this.shot = await ShotBar.new(this.cybar.address, { from: minter });
@@ -26,6 +31,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
       this.cybar.address,
       this.shot.address,
       dev,
+      treasury,
       '10',
       '10',
       { from: minter }
@@ -43,7 +49,8 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
   });
 
   it('real case', async () => {
-    await time.advanceBlockTo('70');
+    let nextBlock = initialBlock + 20;
+    await time.advanceBlockTo(nextBlock);
     this.lottery = await LotteryRewardPool.new(
       this.barkeeper.address,
       this.cybar.address,
@@ -64,7 +71,8 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     );
 
     await this.lottery.startFarming(4, this.lp4.address, '1', { from: dev });
-    await time.advanceBlockTo('80');
+    nextBlock += 10;
+    await time.advanceBlockTo(nextBlock);
 
     assert.equal((await this.lottery.pendingReward('4')).toString(), '3');
     assert.equal(

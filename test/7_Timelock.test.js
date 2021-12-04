@@ -11,7 +11,7 @@ function encodeParameters(types, values) {
     return abi.encode(types, values);
 }
 
-contract('Timelock', ([alice, bob, carol, dev, minter]) => {
+contract('Timelock', ([alice, bob, carol, dev, minter, treasury]) => {
     beforeEach(async () => {
         this.cybar = await CybarToken.new({ from: alice });
         this.timelock = await Timelock.new(bob, '28800', { from: alice }); //8hours
@@ -65,7 +65,7 @@ contract('Timelock', ([alice, bob, carol, dev, minter]) => {
         this.lp1 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
         this.lp2 = await MockBEP20.new('LPToken', 'LP', '10000000000', { from: minter });
         this.shot = await ShotBar.new(this.cybar.address, { from: minter });
-        this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, '1000', '0', { from: alice });
+        this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, treasury, '1000', '0', { from: alice });
         await this.cybar.transferOwnership(this.barkeeper.address, { from: alice });
         await this.shot.transferOwnership(this.barkeeper.address, { from: minter });
         await this.barkeeper.add('100', this.lp1.address, true, { from: alice });

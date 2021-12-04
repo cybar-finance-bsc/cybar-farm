@@ -4,14 +4,19 @@ const ShotBar = artifacts.require('ShotBar');
 const MasterBarkeeper = artifacts.require('MasterBarkeeper');
 const MockBEP20 = artifacts.require('libs/MockBEP20');
 
-contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
+var initialBlock;
+
+contract('MasterBarkeeper', ([alice, bob, carol, dev, minter, treasury]) => {
+  before(async () => {
+    initialBlock = parseInt((await time.latestBlock()).toString());
+  });
   beforeEach(async () => {
     this.cybar = await CybarToken.new({ from: minter });
     this.shot = await ShotBar.new(this.cybar.address, { from: minter });
     this.lp1 = await MockBEP20.new('LPToken', 'LP1', '1000000', { from: minter });
     this.lp2 = await MockBEP20.new('LPToken', 'LP2', '1000000', { from: minter });
     this.lp3 = await MockBEP20.new('LPToken', 'LP3', '1000000', { from: minter });
-    this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, '1000', '100', { from: minter });
+      this.barkeeper = await MasterBarkeeper.new(this.cybar.address, this.shot.address, dev, treasury, '1000', '100', { from: minter });
     await this.cybar.transferOwnership(this.barkeeper.address, { from: minter });
     await this.shot.transferOwnership(this.barkeeper.address, { from: minter });
 
@@ -41,7 +46,8 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     await this.barkeeper.add('100', this.lp3.address, true, { from: minter });
     assert.equal((await this.barkeeper.poolLength()).toString(), "10");
 
-    await time.advanceBlockTo('170');
+    let nextBlock = initialBlock + 33;
+    await time.advanceBlockTo(nextBlock);
     await this.lp1.approve(this.barkeeper.address, '1000', { from: alice });
     assert.equal((await this.cybar.balanceOf(alice)).toString(), '0');
     await this.barkeeper.deposit(1, '20', { from: alice });
@@ -107,7 +113,7 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
   });
 
 
-  it('updaate multiplier', async () => {
+  it('update multiplier', async () => {
     await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
     await this.barkeeper.add('1000', this.lp2.address, true, { from: minter });
     await this.barkeeper.add('1000', this.lp3.address, true, { from: minter });
@@ -134,7 +140,8 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     assert.equal((await this.cybar.balanceOf(alice)).toString(), '700');
     assert.equal((await this.cybar.balanceOf(bob)).toString(), '150');
 
-    await time.advanceBlockTo('265');
+    let nextBlock = initialBlock + 128;
+    await time.advanceBlockTo(nextBlock);
 
     await this.barkeeper.enterStaking('0', { from: alice });
     await this.barkeeper.enterStaking('0', { from: bob });
@@ -149,6 +156,29 @@ contract('MasterBarkeeper', ([alice, bob, carol, dev, minter]) => {
     await this.barkeeper.withdraw(1, '100', { from: alice });
     await this.barkeeper.withdraw(1, '100', { from: bob });
 
+  });
+
+  it('withdrawal fees', async () => {
+    await this.barkeeper.add('1000', this.lp1.address, true, { from: minter });
+    await this.barkeeper.add('1000', this.lp2.address, true, { from: minter });
+    await this.barkeeper.setWithdrawal(1, 100, 72*60*60, { from: minter });
+    await this.barkeeper.setWithdrawal(2, 100, 60, { from: minter });
+
+    await this.lp1.approve(this.barkeeper.address, '100', { from: alice });
+    await this.barkeeper.deposit(1, '100', { from: alice });
+    await this.barkeeper.withdraw(1, '100', { from: alice });
+    assert.equal((await this.lp1.balanceOf(alice)).toString(), '1999');
+    assert.equal((await this.lp1.balanceOf(treasury)).toString(), '1');
+
+    await this.lp2.approve(this.barkeeper.address, '100', { from: bob });
+    await this.barkeeper.deposit(2, '100', { from: bob });
+    await time.increase(60);
+    await this.barkeeper.withdraw(2, '100', { from: bob });
+    assert.equal((await this.lp2.balanceOf(bob)).toString(), '2000');
+    assert.equal((await this.lp2.balanceOf(treasury)).toString(), '0');
+        
+    await expectRevert(this.barkeeper.setWithdrawal(1, 201, 72*60*60, { from: minter}), 'Withdrawal fee is too large');
+    await expectRevert(this.barkeeper.setWithdrawal(1, 200, 72*60*60+1, {from: minter}), 'Withdrawal fee time period is too large');
   });
 
   it('should allow dev and only dev to update dev', async () => {

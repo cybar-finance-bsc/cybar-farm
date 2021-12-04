@@ -4,27 +4,41 @@ import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
 
 import "./CybarToken.sol";
 
-// ShotBar with Governance.
+/*
+ * @notice ShotBar with Governance.
+ */
 contract ShotBar is BEP20("ShotBar Token", "SYRUP") {
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterBarkeeper).
+    /*
+     * @notice Mints a certain amount to an address
+     * @param _to: Address where the tokens are minted to
+     * @param _amount: Amount of tokens to be minted
+     */
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
+    /*
+     * @notice Burn token
+     * @param _from: Address where tokens are burnt from
+     * @param _amount: Amount of tokens to be burned
+     */
     function burn(address _from, uint256 _amount) public onlyOwner {
         _burn(_from, _amount);
         _moveDelegates(_delegates[_from], address(0), _amount);
     }
 
-    // The Cybar TOKEN!
     CybarToken public cybar;
 
     constructor(CybarToken _cybar) public {
         cybar = _cybar;
     }
 
-    // Safe cybar transfer function, just in case if rounding error causes pool to not have enough Cybars.
+    /*
+     * @notice Safe cybar transfer function
+     * @param _to: Address the cybar are sent to
+     * @param _amount: Amount of cybar to be sent
+     */
     function safeCybarTransfer(address _to, uint256 _amount) public onlyOwner {
         uint256 cybarBal = cybar.balanceOf(address(this));
         if (_amount > cybarBal) {
@@ -34,48 +48,60 @@ contract ShotBar is BEP20("ShotBar Token", "SYRUP") {
         }
     }
 
-    // Copied and modified from YAM code:
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
-    // Which is copied and modified from COMPOUND:
-    // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
-
-    /// @notice A record of each accounts delegate
+    /*
+     * @notice A record of each accounts delegat
+     */
     mapping(address => address) internal _delegates;
 
-    /// @notice A checkpoint for marking number of votes from a given block
+    /*
+     * @notice A checkpoint for marking the nuber of votes from a given block
+     */
     struct Checkpoint {
         uint32 fromBlock;
         uint256 votes;
     }
 
-    /// @notice A record of votes checkpoints for each account, by index
+    /*
+     * @notice A record of votes checkpoints for each account, by index
+     */
     mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;
 
-    /// @notice The number of checkpoints for each account
+    /*
+     * @notice The number of checkpoints for each account
+     */
     mapping(address => uint32) public numCheckpoints;
 
-    /// @notice The EIP-712 typehash for the contract's domain
+    /*
+     * @notice The EIP-712 typehash for the contract's domain
+     */
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256(
             "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
         );
 
-    /// @notice The EIP-712 typehash for the delegation struct used by the contract
+    /*
+     * @notice The EIP-712 typehash for the delegation struct used by the contract
+     */
     bytes32 public constant DELEGATION_TYPEHASH =
         keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
-    /// @notice A record of states for signing / validating signatures
+    /*
+     * @notice A record of states for signing / validating signatures
+     */
     mapping(address => uint256) public nonces;
 
-    /// @notice An event thats emitted when an account changes its delegate
+    /*
+     * @notice An event thats emitted when an account changes its delegate
+     */
     event DelegateChanged(
         address indexed delegator,
         address indexed fromDelegate,
         address indexed toDelegate
     );
 
-    /// @notice An event thats emitted when a delegate account's vote balance changes
+    /*
+     * @notice An event thats emitted when a delegate account's vote balance changes
+     */
     event DelegateVotesChanged(
         address indexed delegate,
         uint256 previousBalance,
