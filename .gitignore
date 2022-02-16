@@ -11,3 +11,4 @@ coverage.json
 
 **.org
 mnemonic
+/yarn.lock
