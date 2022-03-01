@@ -2,9 +2,12 @@
 /build/
 
 node_modules
+mnemonic
 
 #Buidler files
 cache
 artifacts
 coverage
 coverage.json
+
+**.org
