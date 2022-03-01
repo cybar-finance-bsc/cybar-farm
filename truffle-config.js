@@ -15,15 +15,7 @@ module.exports = {
           port: 7545,
           network_id: "*"
       },
-      testnet: {
-          provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
-          network_id: 97,
-          confirmations: 10,
-          timeoutBlocks: 200,
-          skipDryRun: true
-      },
       fantomTestnet: {
-          //provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
           provider: () => new HDWalletProvider(mnemonic, 'https://rpc.testnet.fantom.network/'),
           network_id: 0xfa2,
           confirmation: 10,
