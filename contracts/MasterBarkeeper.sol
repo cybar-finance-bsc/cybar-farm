@@ -223,11 +223,13 @@ contract MasterBarkeeper is Ownable {
     function updateStakingPool() internal {
         uint256 length = poolInfo.length;
         uint256 points = 0;
+        uint256 stakedCybar = shot.totalSupply();
         for (uint256 pid = 1; pid < length; ++pid) {
             points = points.add(poolInfo[pid].allocPoint);
         }
         if (points != 0) {
             points = points.div(3);
+            /* points = points.mul(stakedCybar).div(totalSupply); */
             totalAllocPoint = totalAllocPoint.sub(poolInfo[0].allocPoint).add(
                 points
             );
@@ -431,6 +433,7 @@ contract MasterBarkeeper is Ownable {
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
 
         shot.mint(msg.sender, _amount);
+        /* updateStakingPool(); */
         emit Deposit(msg.sender, 0, _amount);
     }
 
