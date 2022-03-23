@@ -1,9 +1,10 @@
 pragma solidity 0.6.12;
 
-import "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol";
-import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
-import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
-import "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/math/SafeMath.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/access/Ownable.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/IERC20.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/SafeERC20.sol";
+
 
 import "./CybarToken.sol";
 import "./ShotBar.sol";
@@ -18,7 +19,7 @@ interface IMigratorBarkeeper {
     // CybarSwap must mint EXACTLY the same amount of CybarSwap LP tokens or
     // else something bad will happen. Traditional CybarSwap does not
     // do that so be careful!
-    function migrate(IBEP20 token) external returns (IBEP20);
+    function migrate(IERC20 token) external returns (IERC20);
 }
 
 /*
@@ -28,7 +29,7 @@ interface IMigratorBarkeeper {
  */
 contract MasterBarkeeper is Ownable {
     using SafeMath for uint256;
-    using SafeBEP20 for IBEP20;
+    using SafeERC20 for IERC20;
 
     struct UserInfo {
         uint256 amount;
@@ -37,7 +38,7 @@ contract MasterBarkeeper is Ownable {
     }
 
     struct PoolInfo {
-        IBEP20 lpToken;
+        IERC20 lpToken;
         uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 accCybarPerShare;
@@ -124,7 +125,7 @@ contract MasterBarkeeper is Ownable {
      */
     function add(
         uint256 _allocPoint,
-        IBEP20 _lpToken,
+        IERC20 _lpToken,
         bool _withUpdate
     ) public onlyOwner {
         if (_withUpdate) {
@@ -223,13 +224,11 @@ contract MasterBarkeeper is Ownable {
     function updateStakingPool() internal {
         uint256 length = poolInfo.length;
         uint256 points = 0;
-        uint256 stakedCybar = shot.totalSupply();
         for (uint256 pid = 1; pid < length; ++pid) {
             points = points.add(poolInfo[pid].allocPoint);
         }
         if (points != 0) {
             points = points.div(3);
-            /* points = points.mul(stakedCybar).div(totalSupply); */
             totalAllocPoint = totalAllocPoint.sub(poolInfo[0].allocPoint).add(
                 points
             );
@@ -254,10 +253,10 @@ contract MasterBarkeeper is Ownable {
     function migrate(uint256 _pid) public {
         require(address(migrator) != address(0), "migrate: no migrator");
         PoolInfo storage pool = poolInfo[_pid];
-        IBEP20 lpToken = pool.lpToken;
+        IERC20 lpToken = pool.lpToken;
         uint256 bal = lpToken.balanceOf(address(this));
         lpToken.safeApprove(address(migrator), bal);
-        IBEP20 newLpToken = migrator.migrate(lpToken);
+        IERC20 newLpToken = migrator.migrate(lpToken);
         require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
         pool.lpToken = newLpToken;
     }
@@ -433,7 +432,6 @@ contract MasterBarkeeper is Ownable {
         user.rewardDebt = user.amount.mul(pool.accCybarPerShare).div(1e12);
 
         shot.mint(msg.sender, _amount);
-        /* updateStakingPool(); */
         emit Deposit(msg.sender, 0, _amount);
     }
 
