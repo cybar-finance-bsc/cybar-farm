@@ -1,9 +1,10 @@
 pragma solidity 0.6.12;
 
-import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/ERC20.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/access/Ownable.sol";
 
 // CybarToken with Governance.
-contract CybarToken is BEP20("CybarSwap Token", "Cybar") {
+contract CybarToken is ERC20("CybarSwap Token", "Cybar"), Ownable {
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterBarkeeper).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
