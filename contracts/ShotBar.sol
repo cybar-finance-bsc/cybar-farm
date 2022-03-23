@@ -1,13 +1,14 @@
 pragma solidity 0.6.12;
 
-import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/ERC20.sol";
+import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/access/Ownable.sol";
 
 import "./CybarToken.sol";
 
 /*
  * @notice ShotBar with Governance.
  */
-contract ShotBar is BEP20("ShotBar Token", "SYRUP") {
+contract ShotBar is ERC20("ShotBar Token", "SYRUP"), Ownable {
     /*
      * @notice Mints a certain amount to an address
      * @param _to: Address where the tokens are minted to
