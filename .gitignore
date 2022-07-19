@@ -1,6 +1,7 @@
 /build/
 /reports/
 /tmp/
+/.vscode/
 
 **.org
 **/__pycache__/**
