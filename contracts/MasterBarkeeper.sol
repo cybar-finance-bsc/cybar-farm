@@ -5,7 +5,6 @@ import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/access/Ownable.sol";
 import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/IERC20.sol";
 import "Openzeppelin/openzeppelin-contracts@3.4.1/contracts/token/ERC20/SafeERC20.sol";
 
-
 import "./CybarToken.sol";
 import "./ShotBar.sol";
 
@@ -131,8 +130,9 @@ contract MasterBarkeeper is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock =
-            block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number > startBlock
+            ? block.number
+            : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(
             PoolInfo({
@@ -142,7 +142,7 @@ contract MasterBarkeeper is Ownable {
                 accCybarPerShare: 0,
                 withdrawFeePeriod: 0,
                 withdrawFee: 0
-                })
+            })
         );
         updateStakingPool();
     }
@@ -165,8 +165,14 @@ contract MasterBarkeeper is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        require(_withdrawFee <= MAX_WITHDRAW_FEE, "Withdrawal fee is too large");
-        require(_withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD, "Withdrawal fee time period is too large");
+        require(
+            _withdrawFee <= MAX_WITHDRAW_FEE,
+            "Withdrawal fee is too large"
+        );
+        require(
+            _withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD,
+            "Withdrawal fee time period is too large"
+        );
         uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
         poolInfo[_pid].allocPoint = _allocPoint;
         poolInfo[_pid].withdrawFeePeriod = _withdrawFeePeriod;
@@ -190,13 +196,15 @@ contract MasterBarkeeper is Ownable {
         uint256 _allocPoint,
         bool _withUpdate
     ) public onlyOwner {
-        if (_withUpdate){
+        if (_withUpdate) {
             massUpdatePools();
-        } 
+        }
         uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
         poolInfo[_pid].allocPoint = _allocPoint;
         if (prevAllocPoint != _allocPoint) {
-            totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(_allocPoint);
+            totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(
+                _allocPoint
+            );
             updateStakingPool();
         }
     }
@@ -212,8 +220,14 @@ contract MasterBarkeeper is Ownable {
         uint256 _withdrawFee,
         uint256 _withdrawFeePeriod
     ) public onlyOwner {
-        require(_withdrawFee <= MAX_WITHDRAW_FEE, "Withdrawal fee is too large");
-        require(_withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD, "Withdrawal fee time period is too large");
+        require(
+            _withdrawFee <= MAX_WITHDRAW_FEE,
+            "Withdrawal fee is too large"
+        );
+        require(
+            _withdrawFeePeriod <= MAX_WITHDRAW_FEE_PERIOD,
+            "Withdrawal fee time period is too large"
+        );
         poolInfo[_pid].withdrawFee = _withdrawFee;
         poolInfo[_pid].withdrawFeePeriod = _withdrawFeePeriod;
     }
@@ -289,12 +303,14 @@ contract MasterBarkeeper is Ownable {
         uint256 accCybarPerShare = pool.accCybarPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier =
-                getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 cybarReward =
-                multiplier.mul(cybarPerBlock).mul(pool.allocPoint).div(
-                    totalAllocPoint
-                );
+            uint256 multiplier = getMultiplier(
+                pool.lastRewardBlock,
+                block.number
+            );
+            uint256 cybarReward = multiplier
+                .mul(cybarPerBlock)
+                .mul(pool.allocPoint)
+                .div(totalAllocPoint);
             accCybarPerShare = accCybarPerShare.add(
                 cybarReward.mul(1e12).div(lpSupply)
             );
@@ -327,10 +343,10 @@ contract MasterBarkeeper is Ownable {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 cybarReward =
-            multiplier.mul(cybarPerBlock).mul(pool.allocPoint).div(
-                totalAllocPoint
-            );
+        uint256 cybarReward = multiplier
+            .mul(cybarPerBlock)
+            .mul(pool.allocPoint)
+            .div(totalAllocPoint);
         cybar.mint(devaddr, cybarReward.div(10));
         cybar.mint(address(shot), cybarReward);
         pool.accCybarPerShare = pool.accCybarPerShare.add(
@@ -351,10 +367,11 @@ contract MasterBarkeeper is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending =
-                user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
+            uint256 pending = user
+                .amount
+                .mul(pool.accCybarPerShare)
+                .div(1e12)
+                .sub(user.rewardDebt);
             if (pending > 0) {
                 safeCybarTransfer(msg.sender, pending);
             }
@@ -385,17 +402,18 @@ contract MasterBarkeeper is Ownable {
         require(user.amount >= _amount, "Withdraw: not good");
 
         updatePool(_pid);
-        uint256 pending =
-            user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+        uint256 pending = user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
+            user.rewardDebt
+        );
         if (pending > 0) {
             safeCybarTransfer(msg.sender, pending);
         }
         uint256 currentAmount = _amount;
         user.amount = user.amount.sub(_amount);
-        if(block.timestamp < user.lastDepositTime + pool.withdrawFeePeriod){
-            uint256 withdrawFee = currentAmount.mul(pool.withdrawFee).div(10000);
+        if (block.timestamp < user.lastDepositTime + pool.withdrawFeePeriod) {
+            uint256 withdrawFee = currentAmount.mul(pool.withdrawFee).div(
+                10000
+            );
             pool.lpToken.safeTransfer(treasury, withdrawFee);
             currentAmount = currentAmount.sub(withdrawFee);
         }
@@ -413,10 +431,11 @@ contract MasterBarkeeper is Ownable {
         UserInfo storage user = userInfo[0][msg.sender];
         updatePool(0);
         if (user.amount > 0) {
-            uint256 pending =
-                user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
+            uint256 pending = user
+                .amount
+                .mul(pool.accCybarPerShare)
+                .div(1e12)
+                .sub(user.rewardDebt);
             if (pending > 0) {
                 safeCybarTransfer(msg.sender, pending);
             }
@@ -444,10 +463,9 @@ contract MasterBarkeeper is Ownable {
         UserInfo storage user = userInfo[0][msg.sender];
         require(user.amount >= _amount, "Withdraw: not good");
         updatePool(0);
-        uint256 pending =
-            user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+        uint256 pending = user.amount.mul(pool.accCybarPerShare).div(1e12).sub(
+            user.rewardDebt
+        );
         if (pending > 0) {
             safeCybarTransfer(msg.sender, pending);
         }
